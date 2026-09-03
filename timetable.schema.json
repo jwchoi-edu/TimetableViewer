@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "학교 시간표 데이터 스키마",
+  "description": "강의실, 요일, 교시별로 배정된 교사와 강의명을 정의하는 JSON 구조입니다.",
+  "type": "object",
+  "properties": {
+    "rooms": {
+      "type": "object",
+      "description": "최상위 객체. 각 키는 '강의실명'을 의미합니다.",
+      "patternProperties": {
+        "^.+$": {
+          "type": "object",
+          "description": "강의실 객체. 각 키는 '요일'을 의미합니다 (예: mon, tue, mon-fri).",
+          "patternProperties": {
+            "^[a-zA-Z가-힣-]+$": {
+              "type": "object",
+              "description": "요일 객체. 각 키는 '교시'를 의미합니다 (예: 1, 2, 3...)",
+              "patternProperties": {
+                "^[1-7]$": {
+                  "type": "object",
+                  "description": "특정 교시의 수업 정보",
+                  "properties": {
+                    "teacher": {
+                      "type": "string",
+                      "description": "담당 교사 이름. 2명 이상일 경우 쉼표(,)로 구분 (예: '김교사, 이교사')"
+                    },
+                    "course": {
+                      "type": "string",
+                      "description": "강의명 (예: '수학 - 101')"
+                    }
+                  },
+                  "required": [
+                    "teacher",
+                    "course"
+                  ],
+                  "additionalProperties": true
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "rooms"
+  ],
+  "additionalProperties": true
+}
