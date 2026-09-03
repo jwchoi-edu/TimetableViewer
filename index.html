@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>시간표 조회 시스템</title>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --accent-light: #eff6ff;
+            --cell-empty: #f1f5f9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 24px 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Controls Area */
+        .controls-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-group {
+            display: inline-flex;
+            background-color: #f1f5f9;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .btn-tab {
+            border: none;
+            background: transparent;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-tab.active {
+            background-color: var(--card-bg);
+            color: var(--primary-color);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        select {
+            padding: 8px 16px;
+            font-size: 0.95rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            background-color: #fff;
+            min-width: 180px;
+            cursor: pointer;
+        }
+
+        select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* File Warning / Input */
+        .file-upload-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .custom-file-btn {
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+        }
+
+        .custom-file-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .notice-banner {
+            background-color: #fef3c7;
+            border: 1px solid #fde68a;
+            color: #92400e;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        /* Timetable Grid Layout */
+        .timetable-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        .timetable-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(5, minmax(130px, 1fr));
+            gap: 8px;
+            min-width: 720px;
+        }
+
+        .grid-header {
+            background-color: var(--accent-light);
+            color: var(--primary-color);
+            font-weight: 700;
+            text-align: center;
+            padding: 12px 8px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .period-header {
+            background-color: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .cell {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .cell.filled {
+            background-color: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .cell.filled:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .cell.empty {
+            background-color: var(--cell-empty);
+            border-color: transparent;
+            opacity: 0.6;
+        }
+
+        .course-name {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #166534;
+            margin-bottom: 4px;
+            word-break: keep-all;
+        }
+
+        .sub-info {
+            font-size: 0.8rem;
+            color: #15803d;
+            word-break: keep-all;
+        }
+
+        .empty-text {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .status-msg {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            body { padding: 12px 8px; }
+            .controls-card { flex-direction: column; align-items: stretch; }
+            .filter-group { flex-direction: column; align-items: stretch; }
+            select { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+
+    <div class="controls-card">
+        <div class="filter-group">
+            <div class="btn-group">
+                <button id="btnRoom" class="btn-tab active" onclick="setMode('room')">강의실별</button>
+                <button id="btnTeacher" class="btn-tab" onclick="setMode('teacher')">교사별</button>
+            </div>
+
+            <select id="selectTarget" onchange="renderTimetable()">
+                <option value="">-- 선택하세요 --</option>
+            </select>
+        </div>
+
+        <div class="file-upload-wrapper">
+            <label for="jsonFileInput" class="custom-file-btn">timetable.json 불러오기</label>
+            <input type="file" id="jsonFileInput" accept=".json" onchange="handleFileUpload(event)">
+        </div>
+    </div>
+
+    <div class="timetable-container">
+        <div id="timetableGrid" class="timetable-grid">
+            <!-- 자바스크립트로 렌더링됨 -->
+        </div>
+    </div>
+
+    <script>
+        // 요일 및 교시 정의
+        const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri'];
+        const DAY_NAMES = ['월요일', '화요일', '수요일', '목요일', '금요일'];
+        const PERIODS = [1, 2, 3, 4, 5, 6, 7];
+
+        let rawData = null;       // timetable.json 원본
+        let currentMode = 'room'; // 'room' 또는 'teacher'
+        
+        // 데이터 구조화된 인덱스
+        let roomMap = {};    // { "101호": { mon: { 1: {teacher, course} } } }
+        let teacherMap = {}; // { "김교사": { mon: { 1: {room, course} } } }
+
+        // 수동 파일 업로드 처리
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    processData(data);
+                } catch (err) {
+                    alert('유효하지 않은 JSON 파일 형식입니다.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 요일 키 정규화 함수 (mon, mon-fri, 월 등 대응)
+        function normalizeDay(dayKey) {
+            const k = String(dayKey).toLowerCase().trim();
+            if (k.includes('mon') || k.includes('월')) return 'mon';
+            if (k.includes('tue') || k.includes('화')) return 'tue';
+            if (k.includes('wed') || k.includes('수')) return 'wed';
+            if (k.includes('thu') || k.includes('목')) return 'thu';
+            if (k.includes('fri') || k.includes('금')) return 'fri';
+            return k;
+        }
+
+        // 데이터 가공 및 인덱싱 (강의실별, 교사별 데이터 정리)
+        function processData(data) {
+            rawData = data;
+            roomMap = data.rooms || {};
+            teacherMap = {};
+
+            // 교사별 데이터 구조 재조합
+            for (const [roomName, daysObj] of Object.entries(roomMap)) {
+                if (!daysObj) continue;
+
+                for (const [dayKey, periodsObj] of Object.entries(daysObj)) {
+                    const normDay = normalizeDay(dayKey);
+                    if (!DAYS.includes(normDay) || !periodsObj) continue;
+
+                    for (const [periodKey, item] of Object.entries(periodsObj)) {
+                        if (!item || !item.teacher) continue;
+
+                        // ★ 콤마로 구분된 여러 명의 교사를 배열로 분리
+                        const teachers = item.teacher.split(',').map(t => t.trim()).filter(Boolean);
+                        const course = item.course || '';
+
+                        // 각 교사별로 순회하며 교사 맵에 시간표 정보 등록
+                        teachers.forEach(teacher => {
+                            if (!teacherMap[teacher]) {
+                                teacherMap[teacher] = {};
+                            }
+                            if (!teacherMap[teacher][normDay]) {
+                                teacherMap[teacher][normDay] = {};
+                            }
+
+                            // 교사별 매핑 저장
+                            teacherMap[teacher][normDay][periodKey] = {
+                                course: course,
+                                room: roomName
+                            };
+                        });
+                    }
+                }
+            }
+
+            // 드롭다운 및 UI 업데이트
+            updateSelectOptions();
+            renderTimetable();
+        }
+
+        // 모드 전환 (강의실별 <-> 교사별)
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('btnRoom').classList.toggle('active', mode === 'room');
+            document.getElementById('btnTeacher').classList.toggle('active', mode === 'teacher');
+            
+            updateSelectOptions();
+            renderTimetable();
+        }
+
+        // 드롭다운 옵션 채우기
+        function updateSelectOptions() {
+            const select = document.getElementById('selectTarget');
+            select.innerHTML = '';
+
+            const items = currentMode === 'room' ? Object.keys(roomMap) : Object.keys(teacherMap);
+            items.sort();
+
+            if (items.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = currentMode === 'room' ? '-- 강의실 없음 --' : '-- 교사 없음 --';
+                select.appendChild(opt);
+                return;
+            }
+
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = currentMode === 'room' ? '-- 강의실 선택 --' : '-- 교사 선택 --';
+            select.appendChild(defaultOpt);
+
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item;
+                opt.textContent = item;
+                select.appendChild(opt);
+            });
+
+            // 첫 번째 항목 자동 선택
+            if (items.length > 0) {
+                select.value = items[0];
+            }
+        }
+
+        // 시간표 렌더링 (35칸 그리드)
+        function renderTimetable() {
+            const grid = document.getElementById('timetableGrid');
+            const targetVal = document.getElementById('selectTarget').value;
+
+            grid.innerHTML = '';
+
+            // 헤더 생성 (왼쪽 상단 빈 칸 + 5개 요일)
+            const cornerHeader = document.createElement('div');
+            cornerHeader.className = 'grid-header';
+            cornerHeader.textContent = '/';
+            grid.appendChild(cornerHeader);
+
+            DAY_NAMES.forEach(dayName => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'grid-header';
+                dayHeader.textContent = dayName;
+                grid.appendChild(dayHeader);
+            });
+
+            // 선택된 대상이 없을 경우
+            if (!targetVal) {
+                for (let p of PERIODS) {
+                    const pHeader = document.createElement('div');
+                    pHeader.className = 'period-header';
+                    pHeader.textContent = `${p}교시`;
+                    grid.appendChild(pHeader);
+
+                    for (let d of DAYS) {
+                        const emptyCell = document.createElement('div');
+                        emptyCell.className = 'cell empty';
+                        emptyCell.innerHTML = `<span class="empty-text">-</span>`;
+                        grid.appendChild(emptyCell);
+                    }
+                }
+                return;
+            }
+
+            // 1~7교시 행 생성
+            PERIODS.forEach(period => {
+                // 교시 헤더
+                const pHeader = document.createElement('div');
+                pHeader.className = 'period-header';
+                pHeader.textContent = `${period}교시`;
+                grid.appendChild(pHeader);
+
+                // 월~금 (5칸)
+                DAYS.forEach(day => {
+                    const cell = document.createElement('div');
+                    let cellData = null;
+
+                    if (currentMode === 'room') {
+                        // 강의실별 조회
+                        const roomData = roomMap[targetVal] || {};
+                        // day 정규화 검색
+                        for (const [dk, pObj] of Object.entries(roomData)) {
+                            if (normalizeDay(dk) === day && pObj && pObj[period]) {
+                                cellData = pObj[period];
+                                break;
+                            }
+                        }
+                    } else {
+                        // 교사별 조회
+                        const teacherData = teacherMap[targetVal] || {};
+                        if (teacherData[day] && teacherData[day][period]) {
+                            cellData = teacherData[day][period];
+                        }
+                    }
+
+                    if (cellData) {
+                        cell.className = 'cell filled';
+                        
+                        const courseName = cellData.course || '수업명 없음';
+                        const subInfo = currentMode === 'room' 
+                            ? (cellData.teacher ? `${cellData.teacher}T` : '') 
+                            : (cellData.room ? `${cellData.room}` : '');
+
+                        cell.innerHTML = `
+                            <div class="course-name">${courseName}</div>
+                            <div class="sub-info">${subInfo}</div>
+                        `;
+                    } else {
+                        cell.className = 'cell empty';
+                        cell.innerHTML = `<span class="empty-text">빈 교시</span>`;
+                    }
+
+                    grid.appendChild(cell);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
