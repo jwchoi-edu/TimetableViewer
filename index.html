@@ -498,7 +498,7 @@
                         
                         const courseName = cellData.course || '수업명 없음';
                         const subInfo = currentMode === 'room' 
-                            ? (cellData.teacher ? `cellData.teacher.split(',').map(x=>`${x}T`).join(', ') : '') 
+                            ? (cellData.teacher ? cellData.teacher.split(',').map(x=>`${x}T`).join(', ') : '') 
                             : (cellData.room ? `${cellData.room}` : '');
 
                         cell.innerHTML = `
