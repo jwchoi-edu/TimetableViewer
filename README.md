@@ -1,5 +1,7 @@
 ## 강의실 & 교사 기준 시간표 뷰어
 
+[**GitHub Pages 바로가기**](https://jwchoi-edu.github.io/TimetableViewer/)
+
 강의실과 교사 시점에서 시간표를 조회할 수 있습니다. 현재는 2학년 수업만 포함되어 있습니다.
 
 ### 사용법
