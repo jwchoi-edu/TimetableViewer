@@ -1,283 +1,352 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>시간표 조회 시스템</title>
-    <style>
-        :root {
-            --primary-color: #3b82f6;
-            --primary-hover: #2563eb;
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --accent-light: #eff6ff;
-            --cell-empty: #f1f5f9;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f4f7fb">
+  <title>시간표 조회 시스템</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-soft: #eef2ff;
+      --page: #f4f7fb;
+      --surface: #ffffff;
+      --ink: #172033;
+      --muted: #64748b;
+      --border: #e3e8f1;
+      --empty: #f6f8fc;
+      --occupied: #effaf4;
+      --occupied-border: #c4ecd3;
+      --occupied-ink: #166534;
+      --shadow: 0 5px 18px rgba(22, 34, 66, .055);
+    }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; }
+    body {
+      overflow: hidden;
+      padding: clamp(6px, 1.2vw, 18px);
+      background: var(--page);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, select, input { font: inherit; }
+    button:focus-visible, select:focus-visible, label:focus-visible {
+      outline: 3px solid rgba(79, 70, 229, .3);
+      outline-offset: 2px;
+    }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            padding: 24px 16px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+    .app-shell {
+      width: min(100%, 1500px);
+      height: 100%;
+      min-height: 0;
+      margin: 0 auto;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      gap: clamp(7px, 1vh, 13px);
+    }
+    .topbar {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 2px;
+    }
+    .brand { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .eyebrow {
+      color: var(--primary);
+      font-size: .65rem;
+      font-weight: 800;
+      letter-spacing: .13em;
+      line-height: 1.1;
+    }
+    .heading-row { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+    h1 { margin: 0; font-size: clamp(1.12rem, 1.65vw, 1.55rem); line-height: 1.2; font-weight: 800; letter-spacing: -.045em; white-space: nowrap; }
+    .subtitle { margin: 0; color: var(--muted); font-size: clamp(.72rem, .95vw, .86rem); white-space: nowrap; }
+    .status-pill {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: 42%;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 11px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255,255,255,.82);
+      color: #475569;
+      font-size: .76rem;
+      font-weight: 650;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .status-dot { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: #94a3b8; }
+    .status-pill.ready .status-dot { background: #22a06b; }
+    .status-pill.warning { color: #92400e; background: #fffbeb; border-color: #fde68a; }
+    .status-pill.warning .status-dot { background: #d97706; }
+    .status-pill.loading .status-dot { background: var(--primary); }
 
-        header {
-            margin-bottom: 24px;
-            text-align: center;
-        }
+    .controls-card {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: clamp(8px, .9vw, 13px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+    }
+    .filter-group { min-width: 0; flex: 1; display: flex; align-items: center; gap: 10px; }
+    .btn-group {
+      flex: 0 0 auto;
+      display: inline-flex;
+      gap: 3px;
+      padding: 4px;
+      border: 1px solid #e8ebf5;
+      border-radius: 10px;
+      background: #f5f6fb;
+    }
+    .btn-tab {
+      min-height: 34px;
+      padding: 7px 14px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: #64748b;
+      font-size: .83rem;
+      font-weight: 750;
+      cursor: pointer;
+      transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+      white-space: nowrap;
+    }
+    .btn-tab:hover { color: var(--primary); }
+    .btn-tab.active { color: var(--primary); background: white; box-shadow: 0 1px 4px rgba(30, 41, 59, .12); }
+    select {
+      min-width: 0;
+      width: min(100%, 420px);
+      height: 42px;
+      padding: 0 38px 0 13px;
+      appearance: auto;
+      border: 1px solid #dce2ed;
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink);
+      font-size: .9rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .file-upload-wrapper { flex: 0 0 auto; display: flex; align-items: center; }
+    input[type="file"] { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .custom-file-btn {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 13px;
+      border: 1px solid #dce2ed;
+      border-radius: 10px;
+      background: #fff;
+      color: #334155;
+      font-size: .82rem;
+      font-weight: 750;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease;
+    }
+    .custom-file-btn::before { content: "↑"; font-size: 1rem; font-weight: 800; color: var(--primary); }
+    .custom-file-btn:hover { border-color: #b8c0fa; background: var(--primary-soft); }
 
-        h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--text-main);
-            margin-bottom: 8px;
-        }
+    .timetable-container {
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      padding: clamp(5px, .75vw, 11px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      box-shadow: var(--shadow);
+    }
+    .timetable-grid {
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: clamp(38px, 5.4vw, 76px) repeat(5, minmax(0, 1fr));
+      grid-template-rows: clamp(28px, 4vh, 40px) repeat(7, minmax(0, 1fr));
+      gap: clamp(3px, .45vw, 7px);
+    }
+    .grid-header, .period-header, .cell { min-width: 0; min-height: 0; border-radius: 8px; }
+    .grid-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+      background: var(--primary-soft);
+      color: #4338ca;
+      font-size: clamp(.68rem, .95vw, .9rem);
+      font-weight: 800;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .grid-header.corner { color: #7c85a2; background: #f4f6fb; }
+    .period-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      color: #64748b;
+      font-size: clamp(.62rem, .85vw, .78rem);
+      font-weight: 750;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .cell {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: clamp(2px, .55vw, 9px);
+      border: 1px solid var(--border);
+      background: #fff;
+      text-align: center;
+    }
+    .cell.filled { background: var(--occupied); border-color: var(--occupied-border); }
+    .course-name {
+      max-width: 100%;
+      color: var(--occupied-ink);
+      font-size: clamp(.65rem, .92vw, .9rem);
+      font-weight: 800;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+    }
+    .sub-info {
+      max-width: 100%;
+      color: #27804b;
+      font-size: clamp(.56rem, .72vw, .75rem);
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 1;
+      overflow: hidden;
+    }
+    .cell.empty { border-color: transparent; background: var(--empty); }
+    .empty-text { color: #a1aabd; font-size: clamp(.58rem, .75vw, .74rem); }
 
-        p.subtitle {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
-
-        /* Controls Area */
-        .controls-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
-            margin-bottom: 24px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .btn-group {
-            display: inline-flex;
-            background-color: #f1f5f9;
-            padding: 4px;
-            border-radius: 8px;
-        }
-
-        .btn-tab {
-            border: none;
-            background: transparent;
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-tab.active {
-            background-color: var(--card-bg);
-            color: var(--primary-color);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
-
-        select {
-            padding: 8px 16px;
-            font-size: 0.95rem;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            outline: none;
-            background-color: #fff;
-            min-width: 180px;
-            cursor: pointer;
-        }
-
-        select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-        }
-
-        /* File Warning / Input */
-        .file-upload-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .custom-file-btn {
-            background: #f1f5f9;
-            border: 1px solid var(--border-color);
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: background 0.2s;
-        }
-
-        .custom-file-btn:hover {
-            background: #e2e8f0;
-        }
-
-        .notice-banner {
-            background-color: #fef3c7;
-            border: 1px solid #fde68a;
-            color: #92400e;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
-            display: none;
-        }
-
-        /* Timetable Grid Layout */
-        .timetable-container {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
-            overflow-x: auto;
-        }
-
-        .timetable-grid {
-            display: grid;
-            grid-template-columns: 80px repeat(5, minmax(130px, 1fr));
-            gap: 8px;
-            min-width: 720px;
-        }
-
-        .grid-header {
-            background-color: var(--accent-light);
-            color: var(--primary-color);
-            font-weight: 700;
-            text-align: center;
-            padding: 12px 8px;
-            border-radius: 6px;
-            font-size: 0.95rem;
-        }
-
-        .period-header {
-            background-color: #f8fafc;
-            color: var(--text-muted);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            border: 1px solid var(--border-color);
-        }
-
-        .cell {
-            background-color: #ffffff;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 10px;
-            min-height: 80px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .cell.filled {
-            background-color: #f0fdf4;
-            border-color: #bbf7d0;
-        }
-
-        .cell.filled:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .cell.empty {
-            background-color: var(--cell-empty);
-            border-color: transparent;
-            opacity: 0.6;
-        }
-
-        .course-name {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: #166534;
-            margin-bottom: 4px;
-            word-break: keep-all;
-        }
-
-        .sub-info {
-            font-size: 0.8rem;
-            color: #15803d;
-            word-break: keep-all;
-        }
-
-        .empty-text {
-            font-size: 0.8rem;
-            color: #94a3b8;
-        }
-
-        .status-msg {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-muted);
-            font-size: 1rem;
-        }
-
-        @media (max-width: 640px) {
-            body { padding: 12px 8px; }
-            .controls-card { flex-direction: column; align-items: stretch; }
-            .filter-group { flex-direction: column; align-items: stretch; }
-            select { width: 100%; }
-        }
-    </style>
+    @media (max-width: 700px) {
+      body { padding: 7px; }
+      .app-shell { gap: 7px; }
+      .topbar { gap: 8px; }
+      .eyebrow { font-size: .58rem; }
+      .heading-row { gap: 0; }
+      h1 { font-size: 1.1rem; }
+      .subtitle { display: none; }
+      .status-pill { max-width: 50%; padding: 6px 8px; font-size: .68rem; }
+      .controls-card {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 7px;
+        padding: 8px;
+      }
+      .filter-group { display: contents; }
+      .btn-group { grid-column: 1; grid-row: 1; }
+      .btn-tab { min-height: 32px; padding: 6px 10px; font-size: .76rem; }
+      select { grid-column: 1 / -1; grid-row: 2; width: 100%; height: 38px; font-size: .84rem; }
+      .file-upload-wrapper { grid-column: 2; grid-row: 1; }
+      .custom-file-btn { min-height: 36px; padding: 6px 9px; font-size: .72rem; }
+      .custom-file-btn::before { display: none; }
+      .timetable-container { padding: 5px; border-radius: 11px; }
+      .timetable-grid {
+        grid-template-columns: clamp(31px, 9vw, 43px) repeat(5, minmax(0, 1fr));
+        grid-template-rows: clamp(27px, 4vh, 33px) repeat(7, minmax(0, 1fr));
+        gap: 3px;
+      }
+      .grid-header { font-size: clamp(.64rem, 2.5vw, .78rem); }
+      .period-header { font-size: clamp(.57rem, 2.1vw, .69rem); }
+      .cell { gap: 2px; padding: 2px 1px; border-radius: 6px; }
+      .course-name { font-size: clamp(.56rem, 2.25vw, .72rem); line-height: 1.17; }
+      .sub-info { font-size: clamp(.49rem, 1.8vw, .61rem); line-height: 1.1; }
+      .empty-text { font-size: .56rem; }
+    }
+    @media (max-width: 360px) {
+      .status-pill { max-width: 44%; }
+      .btn-tab { padding-inline: 7px; }
+      .custom-file-btn { padding-inline: 7px; }
+      .timetable-grid { grid-template-columns: 29px repeat(5, minmax(0, 1fr)); gap: 2px; }
+      .course-name { font-size: .53rem; }
+      .sub-info { font-size: .46rem; }
+    }
+    @media (max-height: 600px) {
+      body { padding-block: 5px; }
+      .app-shell { gap: 5px; }
+      .topbar { min-height: 32px; }
+      .eyebrow { display: none; }
+      .subtitle { display: none; }
+      .controls-card { padding: 5px 8px; }
+      .timetable-grid { grid-template-rows: 24px repeat(7, minmax(0, 1fr)); gap: 3px; }
+      .cell { gap: 1px; }
+      .course-name { -webkit-line-clamp: 2; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+  </style>
 </head>
 <body>
-
-    <div class="controls-card">
-        <div class="filter-group">
-            <div class="btn-group">
-                <button id="btnRoom" class="btn-tab active" onclick="setMode('room')">강의실별</button>
-                <button id="btnTeacher" class="btn-tab" onclick="setMode('teacher')">교사별</button>
-            </div>
-
-            <select id="selectTarget" onchange="renderTimetable()">
-                <option value="">-- 불러오는 중... --</option>
-            </select>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="eyebrow">TIMETABLE VIEWER</div>
+        <div class="heading-row">
+          <h1>시간표 조회</h1>
+          <p class="subtitle">강의실과 교사 일정을 한눈에 확인하세요.</p>
         </div>
+      </div>
+      <div id="loadStatus" class="status-pill loading" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="statusText">시간표 불러오는 중</span>
+      </div>
+    </header>
 
-        <div class="file-upload-wrapper">
-            <label for="jsonFileInput" class="custom-file-btn">직접 파일 불러오기</label>
-            <input type="file" id="jsonFileInput" accept=".json" onchange="handleFileUpload(event)">
+    <section class="controls-card" aria-label="시간표 조회 옵션">
+      <div class="filter-group">
+        <div class="btn-group" role="group" aria-label="조회 기준 선택">
+          <button type="button" id="btnRoom" class="btn-tab active" aria-pressed="true" onclick="setMode('room')">강의실별</button>
+          <button type="button" id="btnTeacher" class="btn-tab" aria-pressed="false" onclick="setMode('teacher')">교사별</button>
         </div>
-    </div>
+        <select id="selectTarget" aria-label="조회할 강의실 또는 교사 선택" onchange="renderTimetable()">
+          <option value="">시간표 불러오는 중...</option>
+        </select>
+      </div>
+      <div class="file-upload-wrapper">
+        <label for="jsonFileInput" class="custom-file-btn" tabindex="0">JSON 파일 열기</label>
+        <input type="file" id="jsonFileInput" accept=".json,application/json" aria-label="시간표 JSON 파일" onchange="handleFileUpload(event)">
+      </div>
+    </section>
 
-    <div class="timetable-container">
-        <div id="timetableGrid" class="timetable-grid">
-            <!-- 자바스크립트로 렌더링됨 -->
-        </div>
-    </div>
+    <section class="timetable-container" aria-label="주간 시간표">
+      <div id="timetableGrid" class="timetable-grid" aria-live="polite">
+        <!-- JavaScript renders the 5-day, 7-period grid here. -->
+      </div>
+    </section>
+  </main>
 
-    <script>
+  <script>
         // 기본 JSON 주소 설정 (원하는 URL/경로로 변경하세요)
         const DEFAULT_JSON_URL = 'https://raw.githubusercontent.com/jwchoi-edu/TimetableViewer/refs/heads/main/timetable.json';
 
@@ -298,6 +367,14 @@
             loadDefaultTimetable();
         });
 
+        function setStatus(message, state = 'ready') {
+            const pill = document.getElementById('loadStatus');
+            const text = document.getElementById('statusText');
+            if (!pill || !text) return;
+            text.textContent = message;
+            pill.className = `status-pill ${state}`;
+        }
+
         // 기본 URL에서 JSON 불러오기
         async function loadDefaultTimetable() {
             try {
@@ -307,10 +384,12 @@
                 }
                 const data = await response.json();
                 processData(data);
+                setStatus('시간표를 불러왔습니다', 'ready');
             } catch (err) {
                 console.warn('기본 JSON을 불러올 수 없습니다. 직접 파일을 업로드해 주세요.', err);
                 const select = document.getElementById('selectTarget');
-                select.innerHTML = '<option value="">-- 파일 필요 --</option>';
+                select.innerHTML = '<option value="">JSON 파일을 선택하세요</option>';
+                setStatus('파일을 불러와 주세요', 'warning');
                 renderTimetable();
             }
         }
@@ -325,7 +404,9 @@
                 try {
                     const data = JSON.parse(e.target.result);
                     processData(data);
+                    setStatus(`${file.name} 불러오기 완료`, 'ready');
                 } catch (err) {
+                    setStatus('JSON 파일 형식을 확인해 주세요', 'warning');
                     alert('유효하지 않은 JSON 파일 형식입니다.');
                 }
             };
@@ -345,8 +426,11 @@
 
         // 데이터 가공 및 인덱싱 (강의실별, 교사별 데이터 정리)
         function processData(data) {
+            if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                throw new Error('JSON 최상위 데이터는 객체여야 합니다.');
+            }
             rawData = data;
-            roomMap = data.rooms || {};
+            roomMap = data.rooms && typeof data.rooms === 'object' ? data.rooms : {};
             teacherMap = {};
 
             // 교사별 데이터 구조 재조합
@@ -383,6 +467,7 @@
             // 드롭다운 및 UI 업데이트
             updateSelectOptions();
             renderTimetable();
+            setStatus(`강의실 ${Object.keys(roomMap).length}개 · 교사 ${Object.keys(teacherMap).length}명`, 'ready');
         }
 
         // 모드 전환 (강의실별 <-> 교사별)
@@ -390,6 +475,8 @@
             currentMode = mode;
             document.getElementById('btnRoom').classList.toggle('active', mode === 'room');
             document.getElementById('btnTeacher').classList.toggle('active', mode === 'teacher');
+            document.getElementById('btnRoom').setAttribute('aria-pressed', String(mode === 'room'));
+            document.getElementById('btnTeacher').setAttribute('aria-pressed', String(mode === 'teacher'));
             
             updateSelectOptions();
             renderTimetable();
@@ -501,10 +588,13 @@
                             ? (cellData.teacher ? cellData.teacher.split(',').map(x=>`${x}T`).join(', ') : '') 
                             : (cellData.room ? `${cellData.room}` : '');
 
-                        cell.innerHTML = `
-                            <div class="course-name">${courseName}</div>
-                            <div class="sub-info">${subInfo}</div>
-                        `;
+                        const courseEl = document.createElement('div');
+                        courseEl.className = 'course-name';
+                        courseEl.textContent = courseName;
+                        const infoEl = document.createElement('div');
+                        infoEl.className = 'sub-info';
+                        infoEl.textContent = subInfo;
+                        cell.append(courseEl, infoEl);
                     } else {
                         cell.className = 'cell empty';
                         cell.innerHTML = `<span class="empty-text">빈 교시</span>`;
@@ -514,6 +604,6 @@
                 });
             });
         }
-    </script>
+      </script>
 </body>
 </html>
